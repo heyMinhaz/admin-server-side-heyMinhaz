@@ -27,6 +27,7 @@ async function run() {
   try {
      const newsCollection = client.db("newspaper").collection("news");
      const userdatabase = client.db("newspaper").collection("users");
+     const paymentCollection = client.db("newspaper").collection("payments");
     await client.connect();
 
    
@@ -67,10 +68,56 @@ app.get("/news/:_id", async (req, res) => {
     });
 
 
-app.get("/users", async (req, res) => {
-  const result = await userdatabase.find().toArray();
+  app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      console.log(amount, 'amount inside the intent')
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    });
+
+
+    app.get('/payments/:email',  async (req, res) => {
+      const query = { email: req.params.email }
+      
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    app.post('/payments', async (req, res) => {
+      const payment = req.body;
+      const paymentResult = await paymentCollection.insertOne(payment)
+    });
+
+
+
+
+app.post("/users", async (req, res) => {
+  const user = req.body;
+  // insert email if user doesnt exists:
+  // you can do this many ways (1. email unique, 2. upsert 3. simple checking)
+  const query = { email: user.email };
+  const existingUser = await userdatabase.findOne(query);
+  if (existingUser) {
+    return res.send({ message: "user already exists", insertedId: null });
+  }
+  const result = await userdatabase.insertOne(user);
   res.send(result);
 });
+
+
+    
+
+
+
 
 app.get("/users/admin/:email", async (req, res) => {
   const email = req.params.email;
