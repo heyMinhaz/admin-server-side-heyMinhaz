@@ -117,7 +117,10 @@ app.post("/users", async (req, res) => {
     
 
 
-
+app.get("/users", async (req, res) => {
+  const result = await userdatabase.find().toArray();
+  res.send(result);
+});
 
 app.get("/users/admin/:email", async (req, res) => {
   const email = req.params.email;
