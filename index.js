@@ -122,7 +122,7 @@ app.get("/users", async (req, res) => {
 });
 
 app.get("/users/admin/:email", async (req, res) => {
- 
+  const email = req.params.email;
 
   const query = { email: email };
   const user = await userdatabase.findOne(query);
